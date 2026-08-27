@@ -1,0 +1,447 @@
+/* ==========================================================================
+   HÓTEL LÆKUR · „Eitt kvöld"
+   A Mirror House transplant. One master scroll lerps the ground from day to
+   night through a single writer on :root; every section inherits. The film is
+   a pre-decoded frame sequence on a canvas, never a scrubbed <video>.
+   Palette quantised from the hotel's own photographs. See DESIGN.md.
+   ========================================================================== */
+
+@font-face { font-family: 'Ranade'; src: url('assets/fonts/Ranade-Thin.woff2') format('woff2'); font-weight: 100; font-display: swap; }
+@font-face { font-family: 'Ranade'; src: url('assets/fonts/Ranade-Light.woff2') format('woff2'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Ranade'; src: url('assets/fonts/Ranade-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Ranade'; src: url('assets/fonts/Ranade-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Basier Mono'; src: url('assets/fonts/basier-mono.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+
+:root {
+  /* sampled: see DESIGN.md §3 */
+  --bone:   #F4F1E8;
+  --field:  #5B6430;
+  --dusk:   #AD6347;
+  --night:  #0D191E;
+  --aurora: #609467;
+  --ember:  #DE9913;   /* THE accent: the light in their windows */
+
+  /* the three the master scroll writes, day values as the resting state */
+  --lk-c:    #F4F1E8;
+  --lk-ink:  #2A2E22;
+  --lk-soft: #E7E2D4;
+
+  --sans: 'Ranade', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'Basier Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --ease: cubic-bezier(.19, 1, .22, 1);
+  --soft: cubic-bezier(.4, 0, .2, 1);
+
+  --pad:  clamp(1.25rem, 3.2vw, 2.75rem);
+  --wrap: 84rem;
+  --chrome-h: 4.75rem;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+/* clip, never hidden: overflow:hidden kills sticky */
+html, body { overflow-x: clip; }
+html { background: var(--night); scroll-behavior: auto; }
+html.lenis, html.lenis body { height: auto; }
+body {
+  background: var(--lk-c);
+  color: var(--lk-ink);
+  font: 400 1.0625rem/1.65 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .1s linear;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a, button { touch-action: manipulation; }
+[id] { scroll-margin-top: 6rem; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
+::selection { background: var(--ember); color: #1A1508; }
+
+.wrap { width: min(100% - (var(--pad) * 2), var(--wrap)); margin-inline: auto; }
+.fig { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.skip {
+  position: fixed; top: .5rem; left: .5rem; z-index: 400;
+  background: var(--night); color: var(--bone); font: 500 .875rem/1 var(--sans);
+  padding: .9rem 1.1rem; border-radius: 2px;
+  transform: translateY(-320%); transition: transform .2s var(--soft);
+}
+.skip:focus { transform: translateY(0); }
+
+/* ---------- type roles ---------- */
+.phase {
+  font: 400 .75rem/1.3 var(--mono); letter-spacing: .18em; text-transform: uppercase;
+  color: var(--lk-ink); opacity: .5; margin-bottom: 1.4rem;
+}
+.phase.is-aurora { color: var(--aurora); opacity: .9; }
+.h2 {
+  font: 300 clamp(1.85rem, 4vw, 3.5rem)/1.14 var(--sans);
+  letter-spacing: -.015em; text-wrap: pretty; max-width: 20ch;
+}
+.copy { font: 400 1.0625rem/1.72 var(--sans); max-width: 60ch; opacity: .82; }
+
+/* ---------- the status-strip sampler (Safari 26) ---------- */
+.tintplate {
+  position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 41;
+  pointer-events: none; background-color: var(--lk-c);
+  transition: background-color .4s var(--soft);
+}
+/* over the hero the honest sampled colour is the photograph's night sky, not
+   the day ground the page has not reached yet */
+body.at-hero .tintplate { background-color: #12202A; }
+
+/* ---------- loader ------------------------------------------------------
+   Not a bar that fades. The screen is two halves meeting at a seam; the seam
+   draws downward as the page loads, then the halves part along it and the
+   wordmark opens out of its own rule in the same gesture. The loading element
+   IS the signature, rehearsed once.
+   Gated on html.js: without script there is no loader at all, so a no-JS
+   visitor can never be left staring at a curtain that will not lift. */
+.loader { display: none; }
+html.js .loader {
+  display: block; position: fixed; inset: 0; z-index: 300; pointer-events: none;
+}
+html.js body.loaded .loader { pointer-events: none; }
+.loader_half {
+  position: absolute; top: 0; bottom: 0; width: 50.2vw; background: var(--night);
+  will-change: transform;
+}
+.loader_half--l { left: 0; }
+.loader_half--r { right: 0; }
+.loader_seam {
+  position: absolute; top: 0; bottom: 0; left: 50%; width: 1px;
+  background: var(--bone); opacity: .55; transform-origin: 50% 0%;
+  transform: scaleY(0);
+}
+.loader_place {
+  position: absolute; left: 50%; bottom: clamp(2rem, 7vh, 4rem); transform: translateX(-50%);
+  font: 400 .7rem/1 var(--mono); letter-spacing: .22em; text-transform: uppercase;
+  color: var(--bone); opacity: 0; white-space: nowrap;
+}
+/* the page must not scroll under the curtain */
+html.js body.is-loading { overflow: hidden; }
+
+/* ---------- chrome: mix-blend-difference, so it needs no bar ---------- */
+.chrome {
+  position: fixed; inset: 0 0 auto 0; z-index: 40; height: var(--chrome-h);
+  display: flex; align-items: center; pointer-events: none;
+}
+/* Over the hero the difference blend carries the bar on its own. Off the
+   photograph it needs a veil in the ground's own colour, or type scrolling
+   past collides with the wordmark. It falls to nothing, so there is no edge. */
+.chrome::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 9rem;
+  background: linear-gradient(180deg, var(--lk-c) 0%, var(--lk-c) 46%, transparent 100%);
+  opacity: 1; transition: opacity .4s var(--soft); pointer-events: none;
+}
+body.at-hero .chrome::before { opacity: 0; }
+/* the veil is absolutely positioned, so the bar's own contents ride above it */
+.chrome > * { position: relative; z-index: 1; }
+.chrome_in { display: flex; align-items: center; gap: 1.75rem; }
+.chrome a, .chrome button { pointer-events: auto; }
+/* Difference ONLY over the hero photograph, where the extremes make it legible
+   and let the bar exist with no fill at all. Off the photograph it sits over the
+   veil, which is a mid value, and difference there returns mud: the nueve rule.
+   So past the hero it class-swaps to the ground's own ink. */
+.chrome_mark, .chrome_nav, .chrome_book, .chrome_burger {
+  color: #F6F4EE; mix-blend-mode: difference;
+  transition: color .4s var(--soft);
+}
+body:not(.at-hero) .chrome_mark,
+body:not(.at-hero) .chrome_nav,
+body:not(.at-hero) .chrome_book,
+body:not(.at-hero) .chrome_burger { color: var(--lk-ink); mix-blend-mode: normal; }
+.chrome_mark { margin-right: auto; font: 500 1.0625rem/1 var(--sans); letter-spacing: .005em; }
+.chrome_nav { display: flex; gap: 1.6rem; }
+.chrome_nav a { font: 400 .9375rem/1 var(--sans); opacity: .82; transition: opacity .3s; }
+.chrome_book {
+  font: 500 .8125rem/1 var(--sans); letter-spacing: .02em;
+  border: 1px solid currentColor; border-radius: 2px; padding: .8rem 1.25rem;
+}
+.chrome_burger { display: none; width: 2.6rem; height: 2.4rem; position: relative; }
+.chrome_burger i { position: absolute; left: 50%; width: 1.4rem; height: 1px; background: currentColor; transition: transform .28s var(--soft); }
+.chrome_burger i:nth-child(1) { top: 50%; transform: translate(-50%, -4px); }
+.chrome_burger i:nth-child(2) { top: 50%; transform: translate(-50%, 4px); }
+body.nav-open .chrome_burger i:nth-child(1) { transform: translate(-50%, 0) rotate(45deg); }
+body.nav-open .chrome_burger i:nth-child(2) { transform: translate(-50%, 0) rotate(-45deg); }
+@media (hover: hover) and (pointer: fine) { .chrome_nav a:hover { opacity: 1; } }
+
+/* the panel is opaque, so its own contents must NOT blend */
+.panel {
+  position: fixed; inset: 0; z-index: 38; background: var(--night); color: var(--bone);
+  padding: calc(var(--chrome-h) + 2rem) var(--pad) calc(var(--pad) + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; justify-content: space-between;
+  opacity: 0; visibility: hidden; transition: opacity .35s var(--soft), visibility 0s linear .35s;
+}
+body.nav-open .panel { opacity: 1; visibility: visible; transition-delay: 0s; }
+body.nav-open .chrome_mark, body.nav-open .chrome_burger { color: var(--bone); mix-blend-mode: normal; }
+.panel_nav { display: grid; gap: .35rem; }
+.panel_nav a { font: 300 clamp(2rem, 7vw, 3rem)/1.25 var(--sans); border-bottom: 1px solid rgba(244,241,232,.14); padding: .55rem 0; }
+.panel_nav a.is-cta { color: var(--ember); }
+.panel_foot { display: grid; gap: .35rem; font: 400 .875rem/1.6 var(--mono); opacity: .6; }
+
+/* ---------- hero ---------- */
+.hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding-bottom: clamp(2.5rem, 7vh, 5rem); }
+.hero_media { position: absolute; inset: 0; overflow: hidden; }
+.hero_media img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.78); }
+.hero_scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,25,30,.34) 0%, rgba(13,25,30,0) 32%, rgba(13,25,30,.42) 100%); }
+.hero_in { position: relative; z-index: 2; }
+
+/* THE SEAM REVEAL. A 1px rule stands where the words meet, draws itself, then
+   Hótel opens leftward out of it and Lækur rightward. clip-path only. */
+.wm { margin: 0 0 1.5rem; }
+.wm_row { display: flex; align-items: baseline; justify-content: flex-start; }
+.wm_word {
+  display: block; color: #F6F4EE; mix-blend-mode: difference;
+  font: 100 clamp(3rem, 12vw, 9.5rem)/1.02 var(--sans); letter-spacing: -.03em;
+  padding-bottom: .1em;   /* Icelandic descender clearance under a clip */
+}
+.wm_rule { display: block; width: 1px; align-self: stretch; background: #F6F4EE; mix-blend-mode: difference; margin: 0 clamp(.5rem, 1.4vw, 1.1rem); transform-origin: 50% 100%; }
+.hero_sub { position: relative; font: 300 clamp(1.05rem, 2vw, 1.5rem)/1.4 var(--sans); color: #F6F4EE; mix-blend-mode: difference; max-width: 26ch; }
+.hero_meta { display: flex; flex-wrap: wrap; gap: .4rem 1.6rem; margin-top: 1.4rem; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: #F6F4EE; mix-blend-mode: difference; opacity: .8; }
+
+/* ---------- section rhythm ---------- */
+.farm, .rooms, .night, .voices, .around, .book { padding-block: clamp(5rem, 12vh, 9rem); }
+.table { padding-block: clamp(5rem, 12vh, 9rem) 0; }
+
+/* ---------- frames: one drift primitive, used everywhere ---------- */
+.frame { overflow: hidden; border-radius: 2px; background: var(--lk-soft); }
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; will-change: transform; }
+.frame.f-tall img { aspect-ratio: 4/5; }
+.frame.f-wide img { aspect-ratio: 21/9; }
+.frame img { aspect-ratio: 4/3; }
+.frame.f-wide { margin-top: clamp(2rem, 5vw, 3.5rem); }
+
+/* ---------- 1 · the farm ---------- */
+.farm_cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.5rem, 4vw, 3.5rem); margin-top: clamp(1.75rem, 4vw, 3rem); }
+.farm_grid { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: clamp(.5rem, 1.2vw, 1rem); margin-top: clamp(2.5rem, 6vw, 4.5rem); }
+/* one shared height across the row: mixed aspect ratios in unequal columns left
+   a ragged baseline and a hole under the short frames */
+.farm_grid .frame { height: clamp(15rem, 27vw, 24rem); }
+.farm_grid .frame img { height: 100%; aspect-ratio: auto; }
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1rem, 3vw, 2rem); margin-top: clamp(2.5rem, 5vw, 3.5rem); border-top: 1px solid currentColor; padding-top: 1.5rem; }
+.facts dt { font: 400 .75rem/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; opacity: .5; margin-bottom: .5rem; }
+.facts dd { font: 300 clamp(1.5rem, 3vw, 2.4rem)/1 var(--sans); }
+
+/* ---------- 2 · rooms ---------- */
+.rooms_note { margin-top: 1.25rem; }
+/* KOBU's hotel index, adapted: offset cards so six rooms read as a row of
+   places rather than a price list. The rate sits on the name's baseline. */
+.roomlist { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 3vw, 2.5rem); margin-top: clamp(2.5rem, 6vw, 4rem); }
+.rc { display: grid; gap: .75rem; align-content: start; }
+.rc--low { margin-top: clamp(2rem, 7vw, 6rem); }
+.rc_fig { height: clamp(14rem, 26vw, 22rem); }
+.rc_fig img { height: 100%; aspect-ratio: auto; }
+.rc_row { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-top: .4rem; }
+.rc_name { font: 400 clamp(1.15rem, 2.2vw, 1.6rem)/1.2 var(--sans); }
+.rc_rate { font: 400 .95rem/1 var(--mono); white-space: nowrap; }
+.rc_rate em { font-style: normal; opacity: .5; font-size: .78rem; }
+.rc_spec { font: 400 .75rem/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; opacity: .5; }
+.rc_copy { font: 400 .95rem/1.65 var(--sans); opacity: .78; max-width: 46ch; }
+
+/* ---------- 3 · the table ---------- */
+.table_head { display: grid; gap: 1.25rem; }
+.table_strip {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(15rem, 26vw);
+  gap: clamp(.5rem, 1.2vw, 1rem); overflow-x: auto; scroll-snap-type: x proximity;
+  padding: clamp(2rem, 5vw, 3.5rem) var(--pad) clamp(1rem, 3vw, 2rem);
+  scrollbar-width: none;
+}
+.table_strip::-webkit-scrollbar { display: none; }
+.table_strip .frame { scroll-snap-align: start; }
+.table_strip .frame:first-child { grid-column: span 1; }
+
+/* ---------- 4 · THE FILM ---------- */
+.film { position: relative; }
+.film_pin { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; place-items: end start; }
+.film_canvas, .film_poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.film_canvas { z-index: 2; }
+.film_poster { z-index: 1; }
+body.film-live .film_poster { opacity: 0; }
+.film_veil { position: absolute; inset: 0; z-index: 3; background: linear-gradient(180deg, rgba(13,25,30,.28) 0%, rgba(13,25,30,0) 34%, rgba(13,25,30,.5) 100%); }
+.film_type { position: relative; z-index: 4; padding-bottom: clamp(2.5rem, 7vh, 5rem); color: #F4F1E8; }
+.film_phase { color: #F4F1E8; opacity: .72; margin-bottom: .6rem; transition: opacity .35s var(--soft); }
+.film_phase.is-turning { opacity: 0; }
+.film_line { font: 300 clamp(1.5rem, 3.6vw, 3rem)/1.2 var(--sans); letter-spacing: -.015em; max-width: 16ch; }
+.film_scroll { height: 190svh; }
+
+/* ---------- 5 · night ---------- */
+.night_grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.5rem, 1.2vw, 1rem); margin-top: clamp(2.5rem, 6vw, 4rem); }
+.night_grid .f-wide { grid-column: 1 / -1; margin-top: 0; }
+
+/* ---------- 6 · voices ---------- */
+.scores { display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(.75rem, 2vw, 1.75rem); margin-top: clamp(2rem, 5vw, 3rem); border-top: 1px solid currentColor; padding-top: 1.5rem; }
+.scores dt { font: 400 .72rem/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; opacity: .5; margin-bottom: .5rem; }
+.scores dd { font: 300 clamp(1.6rem, 3.4vw, 2.6rem)/1 var(--sans); }
+.voices_note { margin-top: 1.75rem; font-size: .875rem; opacity: .55; }
+
+/* ---------- 7 · around ---------- */
+/* Nite Riot: the index sits ON the photograph, not under it */
+.idx { position: relative; margin-top: clamp(2rem, 5vw, 3rem); border-radius: 2px; overflow: hidden; isolation: isolate; }
+.idx_bg { width: 100%; height: clamp(24rem, 52vh, 36rem); object-fit: cover; }
+.idx::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(13,25,30,.82) 0%, rgba(13,25,30,.62) 52%, rgba(13,25,30,.28) 100%); }
+.idx_list { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; justify-content: center; padding: clamp(1.25rem, 4vw, 3rem); color: #F4F1E8; }
+.idx_list > div { display: grid; grid-template-columns: 11rem 1fr; gap: 1.5rem; padding: .85rem 0; border-bottom: 1px solid rgba(244,241,232,.22); }
+.idx_list > div:last-child { border-bottom: 0; }
+.idx_list dt { font: 400 .95rem/1.3 var(--mono); }
+.idx_list dd { font: 400 .95rem/1.5 var(--sans); opacity: .8; }
+
+/* ---------- 8 · book ---------- */
+.book_head { display: grid; gap: 1.25rem; max-width: 62ch; }
+.book_head strong { color: var(--ember); font-weight: 400; }
+/* ---------------------------------------------------------------------------
+   THE BOOKING PANEL. Ours, not Godo's. One bordered panel on a single grid:
+   every row spans the full width, every cell in a row is the same size, and the
+   selected room is marked by weight and a hairline rather than a colour slab.
+   --------------------------------------------------------------------------- */
+.bk {
+  margin-top: clamp(2rem, 5vw, 3rem);
+  border: 1px solid currentColor; border-radius: 3px;
+}
+.bk_row { display: grid; border-bottom: 1px solid currentColor; }
+.bk_row:last-of-type { border-bottom: 0; }
+.bk_row--when { grid-template-columns: repeat(3, 1fr); }
+.bk_cell { padding: clamp(1rem, 2vw, 1.35rem) clamp(1rem, 2vw, 1.4rem); border-right: 1px solid currentColor; }
+.bk_cell:last-child { border-right: 0; }
+.bk_lab { display: block; font: 400 .7rem/1.3 var(--mono); letter-spacing: .13em; text-transform: uppercase; opacity: .5; margin-bottom: .55rem; }
+.bk_opt { text-transform: none; letter-spacing: 0; opacity: .85; }
+.bk_input {
+  width: 100%; max-width: 100%; min-width: 0;
+  -webkit-appearance: none; appearance: none; text-align: left;
+  padding: 0; border: 0; background: transparent;
+  font: 300 clamp(1.05rem, 2vw, 1.35rem)/1.2 var(--sans); color: var(--lk-ink);
+}
+.bk_input:focus { outline: none; color: var(--ember); }
+.bk_input::-webkit-calendar-picker-indicator { opacity: .45; cursor: pointer; }
+
+/* the room row: three equal cells, no colour slab, no ragged heights */
+.bk_row--room { border: 0; border-bottom: 1px solid currentColor; padding: clamp(1rem, 2vw, 1.35rem) clamp(1rem, 2vw, 1.4rem) 0; }
+.bk_row--room .bk_lab { padding: 0; }
+.bk_pills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: .2rem; }
+.bk_pill { position: relative; display: grid; }
+.bk_pill input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.bk_pill span {
+  display: grid; align-content: start; gap: .3rem;
+  padding: 1rem 1.1rem 1.15rem; border-top: 1px solid transparent;
+  transition: border-color .3s var(--soft), opacity .3s var(--soft);
+  opacity: .5;
+}
+.bk_pill b { font: 400 1.05rem/1.25 var(--sans); min-height: 2.6em; display: block; }
+.bk_pill em { font: 400 .72rem/1.3 var(--mono); font-style: normal; letter-spacing: .05em; }
+.bk_pill i { font: 400 .95rem/1 var(--mono); font-style: normal; }
+.bk_pill input:checked + span { opacity: 1; border-top-color: var(--ember); color: var(--ember); }
+.bk_pill input:focus-visible + span { outline: 2px solid var(--ember); outline-offset: -2px; }
+
+.bk_row--sum { grid-template-columns: 1fr auto; align-items: center; gap: 1.5rem; padding: clamp(1rem, 2vw, 1.35rem) clamp(1rem, 2vw, 1.4rem); }
+.bk_row--sum[hidden] { display: none; }
+.bk_sum { display: grid; gap: .3rem; }
+.bk_sum-l { font: 400 1.1rem/1.3 var(--sans); }
+.bk_sum-s { font: 400 .8125rem/1.5 var(--sans); opacity: .55; max-width: 46ch; }
+.bk_price { display: grid; gap: .2rem; text-align: right; }
+.bk_price-n { font: 400 clamp(1.5rem, 3vw, 2.2rem)/1 var(--mono); color: var(--ember); }
+.bk_price-s { font: 400 .7rem/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; opacity: .5; }
+
+.bk_err { font: 400 .875rem/1.5 var(--sans); color: #D2664A; padding: 0 clamp(1rem, 2vw, 1.4rem) 1rem; }
+.bk_err[hidden] { display: none; }
+.bk_row--act { grid-template-columns: auto 1fr; align-items: center; gap: 1.25rem 1.75rem; padding: clamp(1rem, 2vw, 1.35rem) clamp(1rem, 2vw, 1.4rem); }
+.bk_note { font: 400 .8125rem/1.55 var(--sans); opacity: .6; max-width: 48ch; }
+.bk_note strong { color: var(--ember); font-weight: 400; }
+.btn {
+  display: inline-flex; align-items: center; gap: .7rem; min-height: 3.1rem; padding-inline: 1.4rem;
+  font: 400 .95rem/1 var(--sans); border-radius: 2px;
+  background: transparent; color: var(--ember); border: 1px solid var(--ember);
+  cursor: pointer; transition: background .3s var(--soft), color .3s var(--soft), transform .12s var(--soft);
+  white-space: nowrap;
+}
+.btn::after { content: ''; width: .45rem; height: .45rem; border-top: 1px solid currentColor; border-right: 1px solid currentColor; transform: rotate(45deg); }
+.btn:active { transform: translateY(1px); }
+@media (hover: hover) and (pointer: fine) { .btn:hover { background: var(--ember); color: #1A1508; } }
+
+/* what the rate contains, as a wide strip under the panel rather than a tall
+   column beside it: the two never balanced as columns */
+.incl { margin-top: clamp(1.5rem, 3vw, 2.25rem); }
+.incl_lab { margin-bottom: .9rem; }
+.incl_list {
+  list-style: none; display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 0 clamp(1.25rem, 3vw, 2.5rem); border-top: 1px solid currentColor;
+}
+/* icon, label, one line of detail. Tabler outline set, one family, one stroke
+   weight, so the row reads as a system rather than eight drawings. */
+.incl_item {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto;
+  column-gap: .8rem; row-gap: .15rem; align-items: start;
+  padding: 1.15rem 0; border-bottom: 1px solid currentColor;
+}
+.incl_ico { grid-row: 1 / span 2; width: 1.35rem; height: 1.35rem; margin-top: .1rem; color: var(--ember); flex: none; }
+.incl_t { font: 400 .95rem/1.35 var(--sans); }
+.incl_d { font: 400 .78rem/1.4 var(--sans); opacity: .5; }
+.incl_note { font: 400 .8125rem/1.55 var(--sans); opacity: .5; margin-top: 1rem; max-width: 62ch; }
+
+.book_alt { margin-top: 1.5rem; font-size: .95rem; }
+.book_alt a { border-bottom: 1px solid currentColor; }
+
+/* ---------- footer ---------- */
+.foot { background: var(--night); color: var(--bone); padding-block: clamp(3.5rem, 8vw, 6rem) clamp(1.5rem, 3vw, 2.5rem); }
+.foot_top { display: flex; flex-wrap: wrap; gap: clamp(1.5rem, 5vw, 5rem); }
+.foot_col { display: grid; gap: .6rem; align-content: start; min-width: 13rem; }
+.foot_lab { font: 400 .72rem/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; opacity: .5; }
+.foot_big { font: 300 clamp(1.2rem, 2.4vw, 1.8rem)/1.2 var(--sans); }
+.foot_val { font: 400 .95rem/1.6 var(--sans); opacity: .78; }
+.foot_word {
+  font: 100 clamp(4rem, 20vw, 15rem)/.9 var(--sans); letter-spacing: -.04em;
+  opacity: .1; margin-top: clamp(2.5rem, 6vw, 4rem); user-select: none; white-space: nowrap;
+}
+.foot_bot { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; align-items: center; border-top: 1px solid rgba(244,241,232,.16); padding-top: 1.35rem; margin-top: 1.5rem; font: 400 .78rem/1.5 var(--mono); opacity: .7; }
+.foot_credit { display: inline-flex; align-items: center; gap: .7rem; border: 1px solid rgba(244,241,232,.3); border-radius: 999px; padding: .5rem 1.05rem; transition: border-color .35s var(--soft), background .35s var(--soft); }
+.foot_credit > span { font-size: .72rem; opacity: .62; }
+.foot_credit-mark { height: 1.1rem; width: auto; }
+@media (hover: hover) and (pointer: fine) { .foot_credit:hover { border-color: var(--bone); background: rgba(244,241,232,.08); } }
+
+/* ---------- reveals: the resting state in CSS is the VISIBLE one ---------- */
+.lines, .rev { }
+/* the resting state stays VISIBLE. Only script arms a hidden start, and only
+   for elements that begin below the fold. */
+
+/* ---------- mobile ---------- */
+@media (max-width: 860px) {
+  .chrome_nav, .chrome_book { display: none; }
+  .chrome_burger { display: block; }
+  .farm_cols { grid-template-columns: 1fr; }
+  .farm_grid { grid-template-columns: 1fr; }
+  .facts { grid-template-columns: 1fr 1fr; }
+  .night_grid { grid-template-columns: 1fr; }
+  .scores { grid-template-columns: repeat(3, 1fr); }
+  .around_list > div { grid-template-columns: 1fr; gap: .3rem; }
+  /* a pinned 320svh well is punishing on touch; the film becomes a still pair */
+  .film_pin { position: relative; height: 78svh; }
+  .film_scroll { display: none; }
+  .roomlist { grid-template-columns: 1fr; gap: 2.5rem; }
+  .rc--low { margin-top: 0; }
+  .idx_list { position: static; color: var(--lk-ink); padding: 0; }
+  .idx_list > div { grid-template-columns: 1fr; gap: .25rem; border-bottom-color: currentColor; }
+  .idx::after { display: none; }
+  .idx_bg { height: 16rem; }
+  .bk_row--when { grid-template-columns: 1fr; }
+  .bk_cell { border-right: 0; border-bottom: 1px solid currentColor; }
+  .bk_cell:last-child { border-bottom: 0; }
+  .bk_pills { grid-template-columns: 1fr; }
+  .bk_pill b { min-height: 0; }
+  .bk_pill span { border-top: 1px solid currentColor; }
+  .bk_row--sum { grid-template-columns: 1fr; }
+  .bk_price { text-align: left; }
+  .bk_row--act { grid-template-columns: 1fr; }
+  .incl_list { grid-template-columns: 1fr 1fr; gap: 0 1.25rem; }
+  .incl_d { display: none; }
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html.js .lines, html.js .rev { opacity: 1 !important; transform: none !important; }
+  .frame img { transform: none !important; }
+  .film_pin { position: relative; height: 70svh; }
+  .film_scroll { display: none; }
+  .wm_word { clip-path: none !important; transform: none !important; }
+  .wm_rule { transform: none !important; }
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
