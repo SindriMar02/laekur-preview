@@ -342,6 +342,10 @@
   function finishLoad() {
     body.classList.add('loaded');
     body.classList.remove('is-loading');
+    /* the curtain has parted: take the fixed full-viewport layer out entirely
+       rather than leaving it over the page for the rest of the visit */
+    var curtain = document.getElementById('loader');
+    if (curtain) curtain.style.display = 'none';
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.dispatchEvent(new CustomEvent('lk:revealed'));
   }
@@ -570,31 +574,5 @@
       onRefresh: function () { size(); },
     });
   })();
-
-
-  /* TEMPORARY ?diag=1 read-out — real WebKit will not let me attach a console,
-     so the page reports its own state on screen. Removed before hand-off. */
-  if (location.search.indexOf('diag=1') >= 0) {
-    setTimeout(function () {
-      var q = function (sel) {
-        var e = document.querySelector(sel); if (!e) return sel + ':MISSING';
-        var r = e.getBoundingClientRect(), c = getComputedStyle(e);
-        return sel + ' op=' + c.opacity + ' clip=' + (c.clipPath || '-').slice(0, 26) +
-               ' tf=' + (c.transform || '-').slice(0, 30) + ' h=' + Math.round(r.height) +
-               ' t=' + Math.round(r.top) + ' bl=' + c.mixBlendMode;
-      };
-      var d = document.createElement('div');
-      d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#000;color:#0f0;font:10px/1.35 monospace;padding:6px;white-space:pre-wrap';
-      d.textContent = [
-        'body=' + document.body.className,
-        'bodyBg=' + getComputedStyle(document.body).backgroundColor,
-        q('#wmL'), q('#wmR'), q('#wmRule'), q('.hero_sub'), q('.hero_meta'),
-        q('#loader'), q('.loader_half--l'), q('#loaderSeam'),
-        'gsap=' + (!!window.gsap) + ' ST=' + (!!window.ScrollTrigger) + ' touch=' + window.matchMedia('(hover: none) and (pointer: coarse)').matches,
-        'canvas=' + (function () { var c = document.getElementById('filmCanvas'); return c ? c.width + 'x' + c.height + ' f=' + c.dataset.frame : 'none'; })(),
-      ].join('\n');
-      document.body.appendChild(d);
-    }, 6000);
-  }
 
 })();
