@@ -42,8 +42,19 @@
 html, body { overflow-x: clip; }
 html { background: var(--night); scroll-behavior: auto; }
 html.lenis, html.lenis body { height: auto; }
+/* THE STATUS STRIP, FOR REAL THIS TIME.
+   iOS Safari colours the strip from <body>'s background-color — a 4px fixed
+   sampler plate at the top edge was simply never picked, measured on an
+   iPhone 17. So the ground colour moves off body and onto <main>/<footer>,
+   which is what actually needs painting, and body is left free to carry the
+   strip's colour: the photograph's night sky over the hero, the ground
+   everywhere else. Because main paints itself, body's colour is never visible
+   on the page, so the swap at the hero's edge cannot flash. */
+main, .foot { background-color: var(--lk-c); transition: background-color .1s linear; }
+.hero { background-color: #12202A; }
+body:not(.at-hero) { background-color: var(--lk-c); }
 body {
-  background: var(--lk-c);
+  background: #12202A;
   color: var(--lk-ink);
   font: 400 1.0625rem/1.65 var(--sans);
   -webkit-font-smoothing: antialiased;

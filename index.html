@@ -19,7 +19,7 @@
 <meta property="og:description" content="Nineteen rooms on a working horse farm at Hróarslækur, south Iceland. Hot tub, sauna, a restaurant, and the northern lights over the field.">
 <meta property="og:image" content="assets/img/aurora-wide.webp">
 <meta property="og:locale" content="en_GB">
-<link rel="stylesheet" href="styles.css?v=0d6103e2">
+<link rel="stylesheet" href="styles.css?v=eb730f93">
 
 <!-- Every figure on this page traces to one of: the property's own Booking page and its
      availability table (read 2026-08-27), hotellaekur.is, or the rekstrarleyfi register
@@ -61,7 +61,10 @@
 </script>
 </head>
 
-<body class="is-loading" data-ground="day">
+<!-- at-hero ships in the MARKUP: the page always opens on the hero, and Safari
+     samples the status-strip colour at first paint, long before app.js can add
+     the class. syncHero() only ever corrects it from here. -->
+<body class="is-loading at-hero" data-ground="day">
 
 <a class="skip" href="#main">Skip to content</a>
 
