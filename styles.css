@@ -6,10 +6,13 @@
    Palette quantised from the hotel's own photographs. See DESIGN.md.
    ========================================================================== */
 
-@font-face { font-family: 'Ranade'; src: url('assets/fonts/Ranade-Thin.woff2') format('woff2'); font-weight: 100; font-display: swap; }
-@font-face { font-family: 'Ranade'; src: url('assets/fonts/Ranade-Light.woff2') format('woff2'); font-weight: 300; font-display: swap; }
-@font-face { font-family: 'Ranade'; src: url('assets/fonts/Ranade-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'Ranade'; src: url('assets/fonts/Ranade-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+/* Newsreader (SIL OFL, latin-ext — Þ Ð Æ Ö and every acute checked with fonttools
+   before shipping). ExtraLight is the lightest cut that exists, so the wordmark
+   asks for 200, not the 100 Ranade had. */
+@font-face { font-family: 'Newsreader'; src: url('assets/fonts/Newsreader-200.woff2') format('woff2'); font-weight: 200; font-display: swap; }
+@font-face { font-family: 'Newsreader'; src: url('assets/fonts/Newsreader-300.woff2') format('woff2'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Newsreader'; src: url('assets/fonts/Newsreader-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Newsreader'; src: url('assets/fonts/Newsreader-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'Basier Mono'; src: url('assets/fonts/basier-mono.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 
 :root {
@@ -26,7 +29,7 @@
   --lk-ink:  #2A2E22;
   --lk-soft: #E7E2D4;
 
-  --sans: 'Ranade', ui-sans-serif, system-ui, sans-serif;
+  --sans: 'Newsreader', ui-serif, Georgia, serif;
   --mono: 'Basier Mono', ui-monospace, SFMono-Regular, monospace;
 
   --ease: cubic-bezier(.19, 1, .22, 1);
@@ -211,7 +214,7 @@ body.nav-open .chrome_mark, body.nav-open .chrome_burger { color: var(--bone); m
 .wm_row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; }
 .wm_word {
   display: block; color: #F6F4EE; mix-blend-mode: difference;
-  font: 100 clamp(2.6rem, 10.5vw, 8.5rem)/1.02 var(--sans); letter-spacing: -.03em;
+  font: 200 clamp(2.6rem, 10.5vw, 8.5rem)/1.02 var(--sans); letter-spacing: -.03em;
   padding-bottom: .1em;   /* Icelandic descender clearance under a clip */
   white-space: nowrap;
 }
