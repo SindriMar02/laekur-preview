@@ -193,7 +193,7 @@ body.nav-open .chrome_mark, body.nav-open .chrome_burger { color: var(--bone); m
 .hero_in { position: relative; z-index: 2; display: grid; justify-items: center; text-align: center; }
 
 .wm { margin: 0 0 1.35rem; width: 100%; }
-.wm_row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.wm_row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; }
 .wm_word {
   display: block; color: #F6F4EE; mix-blend-mode: difference;
   font: 100 clamp(2.6rem, 10.5vw, 8.5rem)/1.02 var(--sans); letter-spacing: -.03em;
@@ -202,8 +202,10 @@ body.nav-open .chrome_mark, body.nav-open .chrome_burger { color: var(--bone); m
 }
 .wm_l { justify-self: end;   padding-right: clamp(.6rem, 1.5vw, 1.2rem); }
 .wm_r { justify-self: start; padding-left:  clamp(.6rem, 1.5vw, 1.2rem); }
-/* the rule sits in the middle column, so it is the page's exact centre line */
-.wm_rule { display: block; width: 1px; height: .78em; background: #F6F4EE; mix-blend-mode: difference; transform-origin: 50% 50%; }
+/* The rule sits in the middle column, so it is the page's exact centre line,
+   and it stretches to the words' own height so it reads as the same line the
+   loader drew rather than a tick between them. */
+.wm_rule { display: block; width: 1px; align-self: stretch; margin-block: .1em .18em; background: #F6F4EE; mix-blend-mode: difference; transform-origin: 50% 50%; }
 .hero_sub { position: relative; font: 300 clamp(1rem, 1.9vw, 1.45rem)/1.45 var(--sans); color: #F6F4EE; mix-blend-mode: difference; max-width: 30ch; }
 .hero_meta { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1.6rem; margin-top: 1.35rem; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: #F6F4EE; mix-blend-mode: difference; opacity: .78; }
 
