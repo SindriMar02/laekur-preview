@@ -52,6 +52,22 @@
     return { c: mixHex(a.c, b.c, t), ink: mixHex(a.ink, b.ink, t), soft: mixHex(a.soft, b.soft, t) };
   }
   var lastC = '', lastInk = '', lastSoft = '', lastNight = null;
+  /* THE STATUS STRIP HAS ONE WRITER.
+     While the hero photograph fills the screen the strip must be the
+     photograph's own dark sky, not the ground the page has not reached yet.
+     Driving it from the ground alone is what made the top of the page white
+     over a night-time hero. Safari 26 ignores theme-color entirely and samples
+     .tintplate's background-color instead, so both are set from here and kept
+     in step; other browsers use the meta. */
+  var HERO_STRIP = '#12202A';
+  var lastStrip = '';
+  function paintStrip() {
+    var c = body.classList.contains('at-hero') ? HERO_STRIP : (lastNight ? '#0D191E' : '#F4F1E8');
+    if (c === lastStrip) return;
+    lastStrip = c;
+    var meta = document.getElementById('themeColor');
+    if (meta) meta.setAttribute('content', c);
+  }
   function writeGround(p) {
     var g = paletteAt(p);
     if (g.c !== lastC) { root.style.setProperty('--lk-c', g.c); lastC = g.c; }
@@ -65,8 +81,7 @@
       lastNight = night;
       body.dataset.ground = night ? 'night' : 'day';
       root.style.colorScheme = night ? 'dark' : 'light';
-      var meta = document.getElementById('themeColor');
-      if (meta) meta.setAttribute('content', night ? '#0D191E' : '#F4F1E8');
+      paintStrip();
     }
   }
 
@@ -121,7 +136,10 @@
   /* While the hero photograph fills the screen the difference blend carries the
      bar on its own, so the veil and the sampler plate follow the photograph
      rather than the day ground the page has not reached yet. */
-  function syncHero() { body.classList.toggle('at-hero', window.scrollY < window.innerHeight * 0.72); }
+  function syncHero() {
+    body.classList.toggle('at-hero', window.scrollY < window.innerHeight * 0.72);
+    paintStrip();
+  }
   syncHero();
   window.addEventListener('scroll', syncHero, { passive: true });
 
@@ -318,12 +336,24 @@
     var state = { p: 0 };
     gsap.timeline({
       onComplete: function () {
-        /* the seam holds a beat, then the screen parts along it */
-        gsap.timeline({ onComplete: finish })
-          .to(place, { opacity: 0, duration: .35, ease: 'power2.in' }, 0)
-          .to(halves[0], { xPercent: -100, duration: 1.15, ease: 'expo.inOut' }, .1)
-          .to(halves[1], { xPercent: 100, duration: 1.15, ease: 'expo.inOut' }, .1)
-          .to(seam, { opacity: 0, duration: .5, ease: 'power2.in' }, .35);
+        /* The screen parts along the seam, and then the seam does not fade: it
+           SHRINKS onto the wordmark's own rule, which sits at the exact
+           horizontal centre because .wm_row is a 1fr/auto/1fr grid. The line
+           the page opened along becomes the line the words open out of. */
+        var rule = document.getElementById('wmRule');
+        var H = window.innerHeight;
+        var box = rule ? rule.getBoundingClientRect() : null;
+        var tl = gsap.timeline({ onComplete: finish });
+        tl.to(place, { opacity: 0, duration: .3, ease: 'power2.in' }, 0)
+          .to(halves[0], { xPercent: -100, duration: 1.1, ease: 'expo.inOut' }, .08)
+          .to(halves[1], { xPercent: 100, duration: 1.1, ease: 'expo.inOut' }, .08);
+        if (box && box.height > 4) {
+          /* transform-origin is the top, so scaling then translating by the
+             rule's top lands the seam exactly on it */
+          tl.to(seam, { scaleY: box.height / H, y: box.top, duration: .95, ease: 'expo.inOut' }, .45);
+        } else {
+          tl.to(seam, { opacity: 0, duration: .4 }, .5);
+        }
       },
     })
       .to(seam, { scaleY: 1, duration: 1.15, ease: 'power2.inOut' }, 0)
@@ -379,16 +409,22 @@
     gsap.set(R, { clipPath: 'inset(0% 100% 0% 0%)', x: -26 });
     gsap.set(['.hero_sub', '.hero_meta'], { opacity: 0, y: 18 });
     document.addEventListener('lk:revealed', function () {
+      /* the loader's seam has already landed on this exact box, so the real
+         rule simply takes over in the same frame: no draw, no flicker */
+      var loaderSeam = document.getElementById('loaderSeam');
+      gsap.set(rule, { scaleY: 1 });
+      if (loaderSeam) gsap.set(loaderSeam, { opacity: 0 });
       gsap.timeline()
-        .to(rule, { scaleY: 1, duration: .7, ease: 'expo.out' })
-        .to(L, { clipPath: 'inset(0% 0% 0% 0%)', x: 0, duration: 1.5, ease: 'expo.out' }, '-=0.15')
+        .to(L, { clipPath: 'inset(0% 0% 0% 0%)', x: 0, duration: 1.5, ease: 'expo.out' }, .12)
         .to(R, { clipPath: 'inset(0% 0% 0% 0%)', x: 0, duration: 1.5, ease: 'expo.out' }, '<')
-        .to(['.hero_sub', '.hero_meta'], { opacity: 1, y: 0, duration: 1, ease: 'power3.out', stagger: .1 }, '-=0.9');
+        .to(['.hero_sub', '.hero_meta'], { opacity: 1, y: 0, duration: 1, ease: 'power3.out', stagger: .1 }, '-=0.85');
     }, { once: true });
     /* scroll keeps parting them, and the rule outlives the words */
     gsap.to(L, { xPercent: -9, opacity: .1, ease: 'none',
       scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .6 } });
     gsap.to(R, { xPercent: 9, opacity: .1, ease: 'none',
+      scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .6 } });
+    gsap.to(rule, { scaleY: 3.2, opacity: 0, ease: 'none',
       scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .6 } });
   })();
 
