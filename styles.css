@@ -421,9 +421,11 @@ body.film-live .film_poster { opacity: 0; }
   .night_grid { grid-template-columns: 1fr; }
   .scores { grid-template-columns: repeat(3, 1fr); }
   .around_list > div { grid-template-columns: 1fr; gap: .3rem; }
-  /* a pinned 320svh well is punishing on touch; the film becomes a still pair */
-  .film_pin { position: relative; height: 78svh; }
-  .film_scroll { display: none; }
+  /* The film is the signature, so the phone gets it too — just a shorter well,
+     and svh so iOS does not re-lay-out the pinned layer on every frame as the
+     URL bar moves. The 828-wide frame set exists for exactly this. */
+  .film_pin { height: 100svh; }
+  .film_scroll { height: 130svh; }
   .roomlist { grid-template-columns: 1fr; gap: 2.5rem; }
   .rc--low { margin-top: 0; }
   .idx_list { position: static; color: var(--lk-ink); padding: 0; }

@@ -22,22 +22,41 @@
   /* ---------- the ground -----------------------------------------------
      Three-pole where Mirror House is two: their own sunset earns a warm step
      that an ice-to-basalt arc did not have. */
-  /* Measured against the document, not guessed: the film section runs 0.45 to
-     0.667 of total scroll and the night chapter opens at 0.667. So the ground
-     holds day until the film starts, turns THROUGH the film in lockstep with
-     the sky being scrubbed, and is fully night the moment the night chapter
-     begins. The scrub itself completes at 0.592 (a 2610px section less one 900px
-     viewport), so the ground lands on night at 0.594 and the two finish together.
-     Re-measure if the section order or the film well changes. */
-  var STOPS = [
-    { at: 0.00,  c: '#F4F1E8', ink: '#2A2E22', soft: '#E7E2D4' },
-    { at: 0.45,  c: '#F4F1E8', ink: '#2A2E22', soft: '#E7E2D4' },
-    { at: 0.495, c: '#EADAC2', ink: '#2A2418', soft: '#DCC9AE' },
-    { at: 0.535, c: '#A8714E', ink: '#F6EFE4', soft: '#8E5C3E' },
-    { at: 0.568, c: '#3E3242', ink: '#F1ECE2', soft: '#4A3C4E' },
-    { at: 0.594, c: '#0D191E', ink: '#EDEAE0', soft: '#16242B' },
-    { at: 1.00,  c: '#0D191E', ink: '#EDEAE0', soft: '#16242B' },
+  /* The ground holds day until the film starts, turns THROUGH the film in
+     lockstep with the sky being scrubbed, and is fully night the moment the
+     scrub completes. The arc below is expressed in FILM-RELATIVE time, and the
+     film's own span is MEASURED off the section each time the layout settles.
+     Hard-coded document fractions were desktop-only by construction: the phone
+     lays the page out at a different height, so the sky and the ground turned
+     at different moments there. Nothing to re-measure by hand now. */
+  var ARC = [
+    { t: 0.000, c: '#F4F1E8', ink: '#2A2E22', soft: '#E7E2D4' },
+    { t: 0.313, c: '#EADAC2', ink: '#2A2418', soft: '#DCC9AE' },
+    { t: 0.590, c: '#A8714E', ink: '#F6EFE4', soft: '#8E5C3E' },
+    { t: 0.819, c: '#3E3242', ink: '#F1ECE2', soft: '#4A3C4E' },
+    { t: 1.000, c: '#0D191E', ink: '#EDEAE0', soft: '#16242B' },
   ];
+  var STOPS = [];
+  function filmSpan() {
+    var sec = document.querySelector('.film');
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    if (!sec || max <= 0) return null;
+    var top = sec.getBoundingClientRect().top + window.pageYOffset;
+    /* the pin is sticky, so the scrub ends one viewport before the section does */
+    var end = top + sec.offsetHeight - window.innerHeight;
+    if (end <= top) return null;
+    return { a: Math.max(0, Math.min(1, top / max)), b: Math.max(0, Math.min(1, end / max)) };
+  }
+  function buildStops() {
+    var sp = filmSpan() || { a: 0.45, b: 0.594 };
+    STOPS = [{ at: 0, c: ARC[0].c, ink: ARC[0].ink, soft: ARC[0].soft }];
+    for (var i = 0; i < ARC.length; i++) {
+      STOPS.push({ at: sp.a + (sp.b - sp.a) * ARC[i].t, c: ARC[i].c, ink: ARC[i].ink, soft: ARC[i].soft });
+    }
+    var last = ARC[ARC.length - 1];
+    STOPS.push({ at: 1, c: last.c, ink: last.ink, soft: last.soft });
+  }
+  buildStops();
 
   var hex2rgb = function (h) { return [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); }); };
   var mixHex = function (a, b, t) {
@@ -292,10 +311,19 @@
   function loadFrames() {
     if (started) return;
     started = true;
+    /* Order matters more than speed here. Loading 1,2,3… means a phone that has
+       fetched a third of the sequence can only scrub the first third and then
+       freezes; the nearest-loaded fallback has nothing ahead of it. Coarse-to-
+       fine passes (every 8th, then 4th, 2nd, all) mean partial coverage always
+       spans the whole film and simply gets smoother as the rest lands. */
+    var order = [], seen = {};
+    for (var stride = 8; stride >= 1; stride = stride >> 1) {
+      for (var i = 0; i < FRAMES; i += stride) { if (!seen[i]) { seen[i] = 1; order.push(i); } }
+    }
     var next = 0;
     var step = function () {
-      if (next >= FRAMES) return;
-      var idx = next++;
+      if (next >= order.length) return;
+      var idx = order[next++];
       var im = new Image();
       im.decoding = 'async';
       im.onload = function () { shots[idx] = im; loadedCount++; step(); };
@@ -393,7 +421,7 @@
     start: 'top top',
     end: 'bottom bottom',
     onUpdate: function (self) { writeGround(self.progress); },
-    onRefresh: function (self) { writeGround(self.progress); },
+    onRefresh: function (self) { buildStops(); writeGround(self.progress); },
   });
   writeGround(0);
 
@@ -477,7 +505,6 @@
     var section = document.querySelector('.film');
     var phase = document.getElementById('filmPhase');
     if (!canvas || !section) return;
-    if (isTouch) return;   /* a pinned 320svh well is punishing on a phone */
 
     /* alpha:true on purpose: an opaque context paints black before the first
        frame lands, which reads as a broken section */
