@@ -82,14 +82,18 @@ a, button { touch-action: manipulation; }
 .copy { font: 400 1.0625rem/1.72 var(--sans); max-width: 60ch; opacity: .82; }
 
 /* ---------- the status-strip sampler (Safari 26) ---------- */
+/* Safari 26 samples this at FIRST PAINT and does not keep re-reading it, so its
+   resting value has to be the answer already. Written the other way round — bone
+   by default, darkened by a JS-applied .at-hero — the strip was sampled bone
+   before app.js had run and stayed cream over a night-time hero for the whole
+   visit. The page always opens on the hero, so the hero tone IS the resting
+   state and the ground colour is the exception. */
 .tintplate {
   position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 41;
-  pointer-events: none; background-color: var(--lk-c);
+  pointer-events: none; background-color: #12202A;
   transition: background-color .4s var(--soft);
 }
-/* over the hero the honest sampled colour is the photograph's night sky, not
-   the day ground the page has not reached yet */
-body.at-hero .tintplate { background-color: #12202A; }
+body:not(.at-hero) .tintplate { background-color: var(--lk-c); }
 
 /* ---------- loader ------------------------------------------------------
    Not a bar that fades. The screen is two halves meeting at a seam; the seam
