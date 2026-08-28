@@ -439,7 +439,13 @@ body.film-live .film_poster { opacity: 0; }
   /* The film is the signature, so the phone gets it too — just a shorter well,
      and svh so iOS does not re-lay-out the pinned layer on every frame as the
      URL bar moves. The 828-wide frame set exists for exactly this. */
-  .film_pin { height: 100svh; }
+  /* svh is the SMALL viewport — the one with the URL bar expanded. With the bar
+     compact the screen is taller than the pin, and a band of ground showed under
+     the film. So the pin takes the LARGE viewport (100vh, which iOS never
+     re-computes, unlike dvh) and the caption is pushed up by exactly the
+     difference so the browser chrome can never sit on top of it. */
+  .film_pin { height: 100vh; }
+  .film_type { padding-bottom: calc(clamp(2.5rem, 7vh, 5rem) + (100vh - 100svh)); }
   .film_scroll { height: 130svh; }
   .roomlist { grid-template-columns: 1fr; gap: 2.5rem; }
   .rc--low { margin-top: 0; }
